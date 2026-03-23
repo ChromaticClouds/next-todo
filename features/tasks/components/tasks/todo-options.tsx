@@ -1,3 +1,4 @@
+import { DialogTrigger } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,7 @@ import {
   BoxSelectIcon,
   CalendarSearch,
   CheckIcon,
+  EditIcon,
   EllipsisVerticalIcon,
   PinIcon,
   TrashIcon,
@@ -62,11 +64,24 @@ export const TodoOptions = ({ todo }: { todo: TodoResponse }) => {
               <CalendarSearch />
               <span>Detail</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" className="h-10 px-2 gap-2">
-              <TrashIcon />
-              <span>Delete</span>
+            <DropdownMenuItem
+              className="h-10 px-2 gap-2"
+              onClick={() => router.push(`/todos/edit/${todo._id}`)}
+            >
+              <EditIcon />
+              <span>Edit task</span>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+
+            <DialogTrigger asChild>
+              <DropdownMenuItem
+                variant="destructive"
+                className="h-10 px-2 gap-2"
+              >
+                <TrashIcon />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DialogTrigger>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>

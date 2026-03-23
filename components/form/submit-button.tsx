@@ -6,12 +6,14 @@ import { useStore } from '@tanstack/react-form';
 type SubmitButtonProps = {
   className?: string;
   variant?: React.ComponentProps<typeof Button>['variant'];
+  ignoreTouched?: boolean;
 } & React.PropsWithChildren;
 
 export const SubmitButton = ({
   children,
   className,
   variant,
+  ignoreTouched = false,
 }: SubmitButtonProps) => {
   const form = useFormContext();
 
@@ -21,12 +23,14 @@ export const SubmitButton = ({
     state.canSubmit,
   ]);
 
+  const touchCondition = ignoreTouched ? false : !isTouched
+
   return (
     <Button
       type="submit"
       className={className}
       variant={variant}
-      disabled={isSubmitting || !canSubmit || !isTouched}
+      disabled={isSubmitting || !canSubmit || touchCondition}
     >
       {isSubmitting ? <Spinner /> : children}
     </Button>

@@ -3,8 +3,7 @@
 import { ChartContainer } from '@/components/ui/chart';
 import { Cell, Pie, PieChart } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-import { todoQueryKeys } from '@/features/tasks/query';
-import { todoApi } from '@/features/tasks/services/todo-api';
+import { todoQueries } from '@/features/tasks/query';
 import { useMemo } from 'react';
 import { TodoResponse } from '@/features/tasks/types';
 
@@ -27,11 +26,7 @@ const calculateRate = (todos: TodoResponse[]) => {
 };
 
 export const TodoChart = () => {
-  const { data: todos = [] } = useQuery({
-    queryKey: todoQueryKeys.all,
-    queryFn: todoApi.getTodos,
-    select: (s) => s.data
-  });
+  const { data: todos = [] } = useQuery(todoQueries.list({}));
 
   const chartData = useMemo(() => {
     const rate = calculateRate(todos);
@@ -70,7 +65,7 @@ export const TodoChart = () => {
           dominantBaseline="middle"
           className="text-sm fill-foreground"
         >
-          {calculateRate(todos)}%
+          {calculateRate(todos) || 0}%
         </text>
       </PieChart>
     </ChartContainer>

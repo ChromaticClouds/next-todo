@@ -1,12 +1,29 @@
+"use client"
+
+/**
+ * Components
+ */
 import { TodoOptions } from '@/features/tasks/components/tasks/todo-options';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { AlarmClockIcon, CheckCircle } from 'lucide-react';
 import { TodoResponse } from '@/features/tasks/types';
+import { Dialog } from '@/components/ui/dialog';
+import { TodoDeleteDialog } from '@/features/tasks/components/tasks/todo-delete-dialog';
+
+/**
+ * Hooks
+ */
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const TodoCard = ({ todo }: { todo: TodoResponse }) => {
+  const isMobile = useIsMobile();
+
   return (
-    <Card className="p-4 border-border relative">
+    <Card
+      className={`p-4 border-border relative transition-colors shrink-0
+        ${todo.completed ? 'bg-muted' : 'bg-card'}`}
+    >
       <div
         className="absolute -top-6 -right-6 rounded-lg w-12 h-12"
         style={{ backgroundColor: todo.color || 'var(--primary)' }}
@@ -16,10 +33,14 @@ export const TodoCard = ({ todo }: { todo: TodoResponse }) => {
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <span className="text-lg font-bold">{todo.title}</span>
+              <span
+                className={`${todo.completed ? 'max-w-50' : 'max-w-76'} text-lg font-bold truncate`}
+              >
+                {todo.title}
+              </span>
               {todo.completed && (
-                <Badge>
-                  <span>Completed</span>
+                <Badge className={isMobile ? 'w-5 h-5 p-0' : ''}>
+                  {!isMobile && <span>Completed</span>}
                   <CheckCircle />
                 </Badge>
               )}
@@ -38,7 +59,10 @@ export const TodoCard = ({ todo }: { todo: TodoResponse }) => {
           </div>
         </div>
 
-        <TodoOptions todo={todo} />
+        <Dialog>
+          <TodoOptions todo={todo} />
+          <TodoDeleteDialog todo={todo} />
+        </Dialog>
       </div>
     </Card>
   );

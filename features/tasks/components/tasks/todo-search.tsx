@@ -1,38 +1,41 @@
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+'use client';
+
+/**
+ * Components
+ */
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group';
-import { SearchIcon, SortDescIcon } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+
+/**
+ * Hooks
+ */
+import { useTaskSearch } from '@/features/tasks/hooks/use-task-search';
+
+/**
+ * Assets
+ */
+import { SearchIcon } from 'lucide-react';
 
 export const TodoSearch = () => {
+  const { search, updateQuery, isPending } = useTaskSearch();
+
   return (
-    <div className="flex gap-3">
-      <InputGroup className="h-12 p-2 min-w-0 border-border">
-        <InputGroupInput placeholder="Search for task..." />
-        <InputGroupAddon>
-          <SearchIcon />
-        </InputGroupAddon>
-      </InputGroup>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="h-12 w-12">
-            <SortDescIcon className="size-5!" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className='w-56'>
-          <DropdownMenuItem>
-            Sort
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <InputGroup className="h-12 p-2 min-w-0 border-border">
+      <InputGroupAddon>
+        <SearchIcon />
+      </InputGroupAddon>
+      <InputGroupInput
+        placeholder="Search for task..."
+        defaultValue={search}
+        onChange={(e) => updateQuery(e.target.value)}
+      />
+      <InputGroupAddon align="inline-end">
+        {isPending && <Spinner />}
+      </InputGroupAddon>
+    </InputGroup>
   );
 };

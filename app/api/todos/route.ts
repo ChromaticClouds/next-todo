@@ -7,10 +7,12 @@ import { runApiEffect } from '@/lib/effect';
 
 export const runtime = 'nodejs';
 
-export const GET = async () =>
-  withMongo(() =>
+export const GET = async (request: NextRequest) => {
+  const search = request.nextUrl.searchParams.get('search')?.trim() ?? '';
+
+  return withMongo(() =>
     runApiEffect({
-      effect: todoService.getTodos(),
+      effect: todoService.getTodos(search),
       onSuccess: (value) => ApiResponse.ok(value),
       onError: {
         GetTodosError: () =>
@@ -18,11 +20,12 @@ export const GET = async () =>
       },
     }),
   );
+};
 
 export const POST = async (request: NextRequest) => {
   const body = await safeJsonParse(request);
 
-  withMongo(() =>
+  return withMongo(() =>
     runApiEffect({
       effect: todoService.createTodo(body),
       onSuccess: (value) => ApiResponse.ok(value, 'Todo fetched successfully'),

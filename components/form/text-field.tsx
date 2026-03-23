@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useFieldContext } from '@/components/form';
 
 type TextFieldProps = {
-  label: string;
+  label: React.ReactNode;
   type?: string;
   showErrorText?: boolean;
   description?: string;

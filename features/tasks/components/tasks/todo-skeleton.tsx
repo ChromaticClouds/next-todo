@@ -6,7 +6,7 @@ export const TodoSkeleton = () => {
       {Array.from({ length: 5 }, (_, i) => (
         <Skeleton
           key={i}
-          className={`h-26 rounded-xl`}
+          className={`h-28 rounded-xl`}
         />
       ))}
     </div>

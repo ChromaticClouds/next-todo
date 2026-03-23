@@ -1,6 +1,6 @@
 import { todoQueryKeys } from '@/features/tasks/query';
 import { todoApi } from '@/features/tasks/services/todo-api';
-import { TodoResponse } from '@/features/tasks/types';
+import { Todo, TodoResponse } from '@/features/tasks/types';
 import { ApiResponse } from '@/shared/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -18,8 +18,6 @@ export const useTodoMutation = () => {
       mutationFn: todoApi.toggleCompleted,
 
       onMutate: async (id: string) => {
-        console.log(id);
-
         await queryClient.cancelQueries({ queryKey: todoQueryKeys.all });
 
         const previousTodos = queryClient.getQueryData<
@@ -32,7 +30,7 @@ export const useTodoMutation = () => {
             if (!old) return old;
             return {
               ...old,
-              data: old.data.map((todo) =>
+              data: old.data?.map((todo) =>
                 todo._id === id
                   ? { ...todo, completed: !todo.completed }
                   : todo,
@@ -53,6 +51,28 @@ export const useTodoMutation = () => {
       onSettled: async () => {
         await queryClient.invalidateQueries({ queryKey: todoQueryKeys.all });
       },
+    }),
+
+    editTodo: useMutation<ApiResponse<void>, Error, { id: string; todo: Todo }>(
+      {
+        mutationFn: ({ id, todo }) => todoApi.editTodo(id, todo),
+        onSuccess: async (_data, variables) => {
+          await Promise.all([
+            queryClient.refetchQueries({
+              queryKey: todoQueryKeys.all,
+            }),
+            queryClient.invalidateQueries({
+              queryKey: todoQueryKeys.detail(variables.id),
+            }),
+          ]);
+        },
+      },
+    ),
+
+    deleteTodo: useMutation({
+      mutationFn: todoApi.deleteTodo,
+      onSuccess: async () =>
+        await queryClient.invalidateQueries({ queryKey: todoQueryKeys.all }),
     }),
   };
 };

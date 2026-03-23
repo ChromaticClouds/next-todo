@@ -7,11 +7,18 @@ type ApiResponse<T = unknown> = {
 };
 
 export const todoApi = {
-  getTodos: () => api.get('todos').json<ApiResponse<TodoResponse[]>>(),
+  getTodos: (search: string) =>
+    api
+      .get('todos', { searchParams: { search } })
+      .json<ApiResponse<TodoResponse[]>>(),
   getDetailTodo: (id: string) =>
     api.get(`todos/${id}`).json<ApiResponse<TodoResponse>>(),
   createTodo: (input: Todo) =>
     api.post('todos', { json: input }).json<ApiResponse<TodoResponse>>(),
   toggleCompleted: (id: string) =>
     api.patch(`todos/${id}`).json<ApiResponse<void>>(),
+  editTodo: (id: string, todo: Todo) =>
+    api.put(`todos/${id}`, { json: todo }).json<ApiResponse<void>>(),
+  deleteTodo: (id: string) =>
+    api.delete(`todos/${id}`).json<ApiResponse<void>>(),
 };

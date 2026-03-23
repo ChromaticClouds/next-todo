@@ -1,28 +1,12 @@
 'use client';
 
-import { todoQueries } from '@/features/tasks/query';
-import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  CalendarDays,
-  CalendarDaysIcon,
-  CheckCircle2,
-  Circle,
-  FileText,
-} from 'lucide-react';
-
-const formatDateTime = (value: string) => {
-  return new Date(value).toLocaleString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+import { CheckCircle2Icon, CircleIcon, FileText } from 'lucide-react';
+import { DETAIL_COLUMNS } from '@/features/tasks/constants';
+import { TodoResponse } from '@/features/tasks/types';
+import { TodoActions } from '@/features/tasks/components/detail/todo-actions';
 
 const InfoRow = ({
   label,
@@ -41,57 +25,10 @@ const InfoRow = ({
   );
 };
 
-const TodoInfoSkeleton = () => {
+export const TodoInfo = ({ todo }: { todo: TodoResponse }) => {
   return (
-    <Card className="border-border/60 shadow-sm">
-      <CardHeader className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-7 w-48 rounded-lg" />
-            <Skeleton className="h-4 w-28 rounded-lg" />
-          </div>
-          <Skeleton className="h-6 w-20 rounded-full" />
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        <Skeleton className="h-24 w-full rounded-2xl" />
-
-        <div className="grid gap-3 md:grid-cols-2">
-          <Skeleton className="h-20 w-full rounded-2xl" />
-          <Skeleton className="h-20 w-full rounded-2xl" />
-          <Skeleton className="h-20 w-full rounded-2xl" />
-          <Skeleton className="h-20 w-full rounded-2xl" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-export const TodoInfo = ({ id }: { id: string }) => {
-  const { data, isPending, isError } = useQuery(todoQueries.detail(id));
-
-  if (isPending) {
-    return <TodoInfoSkeleton />;
-  }
-
-  if (isError || !data?.data) {
-    return (
-      <Card className="border-destructive/30 shadow-sm">
-        <CardContent className="flex min-h-40 items-center justify-center p-6">
-          <p className="text-sm text-muted-foreground">
-            할 일 정보를 불러오지 못했습니다.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const todo = data.data;
-
-  return (
-    <Card className="overflow-hidden border-border/60 shadow-sm">
-      <CardHeader className="gap-4 bg-linear-to-b from-muted/40 to-background">
+    <Card className="overflow-hidden shadow-sm">
+      <CardHeader>
         <div className="flex flex-col gap-4 items-center">
           <div className="space-y-2">
             <CardTitle className="text-2xl font-semibold tracking-tight">
@@ -105,12 +42,12 @@ export const TodoInfo = ({ id }: { id: string }) => {
           >
             {todo.completed ? (
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5" />
+                <CheckCircle2Icon className="size-3.5" />
                 완료
               </span>
             ) : (
               <span className="flex items-center gap-1.5">
-                <Circle className="size-3.5" />
+                <CircleIcon className="size-3.5" />
                 진행 중
               </span>
             )}
@@ -118,7 +55,7 @@ export const TodoInfo = ({ id }: { id: string }) => {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 px-6 py-2">
+      <CardContent className="space-y-6">
         <div className="rounded-2xl bg-muted/30 p-4 border">
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <FileText className="size-4" />
@@ -131,36 +68,23 @@ export const TodoInfo = ({ id }: { id: string }) => {
 
         <Separator />
 
-        <div className="flex flex-col gap-3">
-          <InfoRow
-            label={
-              <div className="flex gap-2 items-center">
-                <CalendarDaysIcon className="size-4 text-muted-foreground" />
-                <span>Start At</span>
-              </div>
-            }
-            value={formatDateTime(todo.startAt)}
-          />
-          <InfoRow
-            label={
-              <div className="flex gap-2 items-center">
-                <CalendarDaysIcon className="size-4 text-muted-foreground" />
-                <span>End At</span>
-              </div>
-            }
-            value={formatDateTime(todo.endAt)}
-          />
-          <InfoRow
-            label={
-              <div className="flex gap-2 items-center">
-                <CalendarDaysIcon className="size-4 text-muted-foreground" />
-                <span>Created At</span>
-              </div>
-            }
-            value={formatDateTime(todo.createdAt)}
-          />
+        <div className="flex flex-col gap-4">
+          {DETAIL_COLUMNS.map((c) => (
+            <InfoRow
+              key={c.field}
+              label={
+                <div className="flex gap-2 items-center">
+                  <c.Icon className="size-4 text-muted-foreground" />
+                  <span>{c.label}</span>
+                </div>
+              }
+              value={c.value(todo[c.field])}
+            />
+          ))}
         </div>
       </CardContent>
+
+      <TodoActions todo={todo} />
     </Card>
   );
 };

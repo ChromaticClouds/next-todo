@@ -19,3 +19,11 @@ export class ToggleCompletedError extends Data.TaggedError(
 )<{
   cause?: unknown;
 }> {}
+
+export class UpdateTodoError extends Data.TaggedError('UpdateTodoError')<{
+  cause?: unknown;
+}> {}
+
+export class DeleteTodoError extends Data.TaggedError('DeleteTodoError')<{
+  id: string
+}> {}

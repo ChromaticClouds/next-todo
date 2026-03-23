@@ -2,24 +2,43 @@ import { Effect, Schema } from 'effect';
 import { TodoModel } from '@/features/tasks/server/todo-model';
 import {
   CreateTodoError,
+  DeleteTodoError,
   GetDetailTodoError,
   GetTodosError,
   TodoNotFoundError,
   ToggleCompletedError,
+  UpdateTodoError,
 } from '@/features/tasks/server/todo-errors';
 import { CreateTodoPayloadSchema } from '@/features/tasks/server/todo-schema';
 import { ValidationError } from '@/shared/errors/global-error';
+import { Todo } from '@/features/tasks/types';
+
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const createSearchFilter = (search: string) => {
+  const keyword = escapeRegex(search);
+
+  return {
+    $or: [
+      { title: { $regex: keyword, $options: 'i' } },
+      { description: { $regex: keyword, $options: 'i' } },
+    ],
+  };
+};
 
 export const todoService = {
-  getTodos: () => {
-    return Effect.tryPromise({
-      try: async () => await TodoModel.find().sort({ createdAt: -1 }).lean(),
+  getTodos: (search: string) =>
+    Effect.tryPromise({
+      try: async () =>
+        await TodoModel.find(createSearchFilter(search))
+          .sort({ createdAt: -1 })
+          .lean(),
       catch: () => new GetTodosError({}),
-    });
-  },
+    }),
 
-  getDetailTodo: (id: string) => {
-    return Effect.gen(function* () {
+  getDetailTodo: (id: string) =>
+    Effect.gen(function* () {
       const todo = yield* Effect.tryPromise({
         try: () => TodoModel.findById(id),
         catch: (cause) => new GetDetailTodoError({ cause }),
@@ -28,11 +47,10 @@ export const todoService = {
       if (!todo) return yield* Effect.fail(new TodoNotFoundError({ id }));
 
       return todo;
-    });
-  },
+    }),
 
-  createTodo: (input: unknown) => {
-    return Effect.gen(function* () {
+  createTodo: (input: unknown) =>
+    Effect.gen(function* () {
       const parsed = yield* Schema.decodeUnknown(CreateTodoPayloadSchema)(
         input,
       ).pipe(
@@ -68,11 +86,10 @@ export const todoService = {
         try: async () => await new TodoModel(payload).save(),
         catch: (cause) => new CreateTodoError({ cause }),
       });
-    });
-  },
+    }),
 
-  toggleCompleted: (id: string) => {
-    return Effect.gen(function* () {
+  toggleCompleted: (id: string) =>
+    Effect.gen(function* () {
       const todo = yield* Effect.tryPromise({
         try: () => TodoModel.findById(id),
         catch: (cause) => new ToggleCompletedError({ cause }),
@@ -86,6 +103,21 @@ export const todoService = {
         try: () => todo.save(),
         catch: (cause) => new ToggleCompletedError({ cause }),
       });
-    });
-  },
+    }),
+
+  editTodo: (id: string, todo: Todo) =>
+    Effect.gen(function* () {
+      return yield* Effect.tryPromise({
+        try: () => TodoModel.updateOne({ _id: id }, { $set: todo }),
+        catch: (cause) => new UpdateTodoError({ cause }),
+      });
+    }),
+
+  deleteTodo: (id: string) =>
+    Effect.gen(function* () {
+      return yield* Effect.tryPromise({
+        try: () => TodoModel.deleteOne({ _id: id }),
+        catch: () => new DeleteTodoError({ id }),
+      });
+    }),
 };

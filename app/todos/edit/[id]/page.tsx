@@ -2,22 +2,29 @@
 
 import { AppContent } from '@/components/common/app-content';
 import { AppTitle } from '@/components/common/app-title';
-import { TaskForm } from '@/features/tasks/components/add-task/task-form';
-import { CalendarIcon } from 'lucide-react';
+import { EditTaskForm } from '@/features/tasks/components/edit-task/edit-task-form';
+import { EditIcon } from 'lucide-react';
+import React from 'react';
 
-export default function AddTask() {
+export default function TodoEdit({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = React.use(params);
+
   return (
     <AppContent>
       <div className="max-w-lg w-full p-4">
         <AppTitle
           title={
             <div className="flex gap-6 items-center">
-              <CalendarIcon size={30} />
-              <p>Add Task</p>
+              <EditIcon />
+              <span>Edit Task</span>
             </div>
           }
         />
-        <TaskForm />
+        <EditTaskForm id={id} />
       </div>
     </AppContent>
   );

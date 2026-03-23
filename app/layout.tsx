@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import { Noto_Sans } from 'next/font/google';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import '@/app/globals.css';
+import { Toaster } from '@/components/ui/sonner';
 
 const notoSans = Noto_Sans({ variable: '--font-sans' });
 
@@ -19,6 +20,7 @@ const client = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
+      refetchOnWindowFocus: false,
     },
   },
 });
@@ -39,7 +41,10 @@ export default function RootLayout({ children }: React.PropsWithChildren) {
             disableTransitionOnChange
           >
             <SidebarProvider>
-              <TooltipProvider>{children}</TooltipProvider>
+              <TooltipProvider>
+                <Toaster position="top-center" />
+                {children}
+              </TooltipProvider>
             </SidebarProvider>
           </ThemeProvider>
         </QueryClientProvider>
