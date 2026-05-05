@@ -1,3 +1,5 @@
+"use client"
+
 import { FieldSeparator } from '@/components/ui/field';
 import { TodoNotFound } from '@/features/tasks/components/detail/todo-not-found';
 import { EditTaskSkeleton } from '@/features/tasks/components/edit-task/edit-task-skeleton';

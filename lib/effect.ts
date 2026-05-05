@@ -1,21 +1,27 @@
-import { ApiResponse } from '@/shared/http/api-response';
 import { Effect } from 'effect';
+import { ApiResponse } from '@/shared/http/api-response';
 
-type ErrorHandlerMap = Record<string, (error: unknown) => Response>;
-
-type RunApiEffectOptions<A> = {
-  effect: Effect.Effect<A, unknown, never>;
-  onSuccess: (value: A) => Response;
-  onError?: ErrorHandlerMap;
-  onUnexpectedError?: (error: unknown) => Response;
+type TaggedError = {
+  _tag: string;
 };
 
-export const runApiEffect = async <A>({
+type ErrorHandlerMap<E extends TaggedError, R> = {
+  [K in E['_tag']]?: (error: Extract<E, { _tag: K }>) => R;
+};
+
+type RunEffectOptions<A, E, R> = {
+  effect: Effect.Effect<A, E, never>;
+  onSuccess: (value: A) => R;
+  onError?: E extends TaggedError ? ErrorHandlerMap<E, R> : never;
+  onUnexpectedError?: (error: E) => R;
+};
+
+export const runEffect = async <A, E, R>({
   effect,
   onSuccess,
-  onError = {},
+  onError,
   onUnexpectedError,
-}: RunApiEffectOptions<A>) => {
+}: RunEffectOptions<A, E, R>) => {
   return Effect.runPromise(
     effect.pipe(
       Effect.map(onSuccess),
@@ -28,13 +34,48 @@ export const runApiEffect = async <A>({
             ? error._tag
             : null;
 
-        if (tag && onError[tag]) return Effect.succeed(onError[tag](error));
+        if (
+          tag &&
+          onError &&
+          tag in onError &&
+          typeof onError[tag as keyof typeof onError] === 'function'
+        ) {
+          const handler = onError[tag as keyof typeof onError] as (
+            error: E,
+          ) => R;
+
+          return Effect.succeed(handler(error));
+        }
 
         return Effect.succeed(
-          onUnexpectedError?.(error) ??
-            ApiResponse.internalServerError('Internal server error'),
+          onUnexpectedError
+            ? onUnexpectedError(error)
+            : (() => {
+                throw error;
+              })(),
         );
       }),
     ),
   );
+};
+
+export const runApiEffect = async <A, E>({
+  effect,
+  onSuccess,
+  onError,
+  onUnexpectedError,
+}: {
+  effect: Effect.Effect<A, E, never>;
+  onSuccess: (value: A) => Response;
+  onError?: E extends TaggedError ? ErrorHandlerMap<E, Response> : never;
+  onUnexpectedError?: (error: E) => Response;
+}) => {
+  return runEffect({
+    effect,
+    onSuccess,
+    onError,
+    onUnexpectedError:
+      onUnexpectedError ??
+      (() => ApiResponse.internalServerError('Internal server error')),
+  });
 };

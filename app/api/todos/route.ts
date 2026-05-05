@@ -2,7 +2,6 @@ import { ApiResponse } from '@/shared/http/api-response';
 import { todoService } from '@/features/tasks/server/todo-service';
 import { NextRequest } from 'next/server';
 import { withMongo } from '@/lib/mongoose';
-import { safeJsonParse } from '@/shared/safe-json-parse';
 import { runApiEffect } from '@/lib/effect';
 
 export const runtime = 'nodejs';
@@ -23,7 +22,7 @@ export const GET = async (request: NextRequest) => {
 };
 
 export const POST = async (request: NextRequest) => {
-  const body = await safeJsonParse(request);
+  const body = await request.json();
 
   return withMongo(() =>
     runApiEffect({

@@ -1,6 +1,6 @@
 import { Background } from '@/components/common/background';
-import { AuthFormContainer } from '@/features/auth/components/auth-form-container';
-import { LoginForm } from '@/features/auth/components/login-form';
+import { AuthFormContainer } from '@/features/auth/components/auth/auth-form-container';
+import { LoginForm } from '@/features/auth/components/auth/login-form';
 
 export default function Login() {
   return (

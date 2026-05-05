@@ -9,7 +9,7 @@ import {
   ToggleCompletedError,
   UpdateTodoError,
 } from '@/features/tasks/server/todo-errors';
-import { CreateTodoPayloadSchema } from '@/features/tasks/server/todo-schema';
+import { CreateTodoPayloadSchema } from '@/features/tasks/server/todo-validation';
 import { ValidationError } from '@/shared/errors/global-error';
 import { Todo } from '@/features/tasks/types';
 

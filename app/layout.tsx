@@ -19,7 +19,7 @@ const notoSans = Noto_Sans({ variable: '--font-sans' });
 const client = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 0,
       refetchOnWindowFocus: false,
     },
   },
@@ -32,7 +32,7 @@ export default function RootLayout({ children }: React.PropsWithChildren) {
       suppressHydrationWarning
     >
       <head />
-      <body>
+      <body suppressHydrationWarning>
         <QueryClientProvider client={client}>
           <ThemeProvider
             attribute="class"

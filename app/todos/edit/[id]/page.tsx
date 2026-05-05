@@ -1,5 +1,3 @@
-'use client';
-
 import { AppContent } from '@/components/common/app-content';
 import { AppTitle } from '@/components/common/app-title';
 import { EditTaskForm } from '@/features/tasks/components/edit-task/edit-task-form';

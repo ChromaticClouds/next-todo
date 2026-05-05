@@ -30,17 +30,30 @@ export const connectMongo = async () => {
   }
 
   globalCache.conn = await globalCache.promise;
-  return globalCache.conn
-}
+  return globalCache.conn;
+};
 
-type RouteAction = () => Promise<Response>;
+type AsyncAction<T> = () => Promise<T>;
 
-export const withMongo = async (action: RouteAction) => {
+export async function withMongo(
+  action: AsyncAction<Response>,
+): Promise<Response>;
+
+export async function withMongo<T>(
+  action: AsyncAction<T>,
+  onError: (error: unknown) => T,
+): Promise<T>;
+
+export async function withMongo<T>(
+  action: AsyncAction<T>,
+  onError?: (error: unknown) => T,
+): Promise<T> {
   try {
     await connectMongo();
     return await action();
   } catch (error) {
     console.error(error);
-    return ApiResponse.internalServerError('Database connection failed');
+    if (onError) return onError(error);
+    return ApiResponse.internalServerError('Database connection failed') as T;
   }
 }

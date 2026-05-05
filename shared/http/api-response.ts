@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 
+type IssuesType<T, U = string> = {
+  formErrors: U[];
+  fieldErrors: { [P in keyof T]?: U[] };
+};
+
 type ApiResponseBody<T> = {
   message?: string;
   data?: T;
-  issues?: readonly string[];
+  issues?: IssuesType<T>;
 };
 
 export class ApiResponse {
@@ -22,7 +27,7 @@ export class ApiResponse {
     return this.build<T>({ message, data }, 201);
   }
 
-  static badRequest(message = 'Bad Request', issues: readonly string[] = []) {
+  static badRequest<T>(message = 'Bad Request', issues?: IssuesType<T>) {
     return this.build({ message, issues }, 400);
   }
 

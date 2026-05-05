@@ -13,13 +13,16 @@ type TextFieldProps = {
   type?: string;
   showErrorText?: boolean;
   description?: string;
-};
+  disabled?: boolean;
+} & React.ComponentProps<'input'>;
 
 export const TextField = ({
   label,
   type = 'text',
   showErrorText = true,
   description,
+  disabled = false,
+  ...props
 }: TextFieldProps) => {
   const field = useFieldContext<string>();
 
@@ -28,16 +31,20 @@ export const TextField = ({
   return (
     <Field className="space-y-1">
       <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-      <Input
-        id={field.name}
-        name={field.name}
-        value={field.state.value}
-        onChange={(e) => field.handleChange(e.target.value)}
-        onBlur={field.handleBlur}
-        type={type}
-        className="h-10"
-        aria-invalid={isInvalid}
-      />
+      <div style={{ cursor: disabled ? 'not-allowed' : 'auto' }}>
+        <Input
+          id={field.name}
+          name={field.name}
+          value={field.state.value}
+          onChange={(e) => field.handleChange(e.target.value)}
+          onBlur={field.handleBlur}
+          type={type}
+          className="h-10"
+          disabled={disabled}
+          aria-invalid={isInvalid}
+          {...props}
+        />
+      </div>
       {description && (
         <FieldDescription
           className={!showErrorText && isInvalid ? 'text-destructive' : ''}

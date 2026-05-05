@@ -4,8 +4,6 @@ import { ApiResponse } from '@/shared/http/api-response';
 import { NextRequest } from 'next/server';
 import { todoService } from '@/features/tasks/server/todo-service';
 import { runApiEffect } from '@/lib/effect';
-import { safeJsonParse } from '@/shared/safe-json-parse';
-import { Todo } from '@/features/tasks/types';
 
 export const GET = async (
   _request: NextRequest,
@@ -57,7 +55,7 @@ export const PUT = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) => {
-  const body = await safeJsonParse<Todo>(request);
+  const body = await request.json();
   const { id } = await params;
 
   if (!mongoose.Types.ObjectId.isValid(id))
