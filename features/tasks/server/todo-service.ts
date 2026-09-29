@@ -11,10 +11,14 @@ import {
 } from '@/features/tasks/server/todo-errors';
 import { CreateTodoPayloadSchema } from '@/features/tasks/server/todo-validation';
 import { ValidationError } from '@/shared/errors/global-error';
-import { Todo } from '@/features/tasks/types';
 
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const validationIssues = (message: string) => ({
+  formErrors: [message],
+  fieldErrors: {},
+});
 
 const createSearchFilter = (search: string) => {
   const keyword = escapeRegex(search);
@@ -28,19 +32,22 @@ const createSearchFilter = (search: string) => {
 };
 
 export const todoService = {
-  getTodos: (search: string) =>
+  getTodos: (userId: string, search: string) =>
     Effect.tryPromise({
       try: async () =>
-        await TodoModel.find(createSearchFilter(search))
+        await TodoModel.find({
+          ownerId: userId,
+          ...createSearchFilter(search),
+        })
           .sort({ createdAt: -1 })
           .lean(),
       catch: () => new GetTodosError({}),
     }),
 
-  getDetailTodo: (id: string) =>
+  getDetailTodo: (userId: string, id: string) =>
     Effect.gen(function* () {
       const todo = yield* Effect.tryPromise({
-        try: () => TodoModel.findById(id),
+        try: () => TodoModel.findOne({ _id: id, ownerId: userId }),
         catch: (cause) => new GetDetailTodoError({ cause }),
       });
 
@@ -49,13 +56,14 @@ export const todoService = {
       return todo;
     }),
 
-  createTodo: (input: unknown) =>
+  createTodo: (userId: string, input: unknown) =>
     Effect.gen(function* () {
       const parsed = yield* Schema.decodeUnknown(CreateTodoPayloadSchema)(
         input,
       ).pipe(
         Effect.mapError(
-          (error) => new ValidationError({ issues: [String(error)] }),
+          (error) =>
+            new ValidationError({ issues: validationIssues(String(error)) }),
         ),
       );
 
@@ -64,19 +72,24 @@ export const todoService = {
 
       if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime()))
         return yield* Effect.fail(
-          new ValidationError({ issues: ['Invalid datetime format'] }),
+          new ValidationError({
+            issues: validationIssues('Invalid datetime format'),
+          }),
         );
 
       if (startAt > endAt)
         return yield* Effect.fail(
           new ValidationError({
-            issues: ['Start time must be earlier than end time'],
+            issues: validationIssues(
+              'Start time must be earlier than end time',
+            ),
           }),
         );
 
       const { timeRange, ...rest } = parsed;
 
       const payload = {
+        ownerId: userId,
         startAt: timeRange.from,
         endAt: timeRange.to,
         ...rest,
@@ -88,10 +101,10 @@ export const todoService = {
       });
     }),
 
-  toggleCompleted: (id: string) =>
+  toggleCompleted: (userId: string, id: string) =>
     Effect.gen(function* () {
       const todo = yield* Effect.tryPromise({
-        try: () => TodoModel.findById(id),
+        try: () => TodoModel.findOne({ _id: id, ownerId: userId }),
         catch: (cause) => new ToggleCompletedError({ cause }),
       });
 
@@ -105,19 +118,64 @@ export const todoService = {
       });
     }),
 
-  editTodo: (id: string, todo: Todo) =>
+  editTodo: (userId: string, id: string, input: unknown) =>
     Effect.gen(function* () {
-      return yield* Effect.tryPromise({
-        try: () => TodoModel.updateOne({ _id: id }, { $set: todo }),
+      const parsed = yield* Schema.decodeUnknown(CreateTodoPayloadSchema)(
+        input,
+      ).pipe(
+        Effect.mapError(
+          (error) =>
+            new ValidationError({ issues: validationIssues(String(error)) }),
+        ),
+      );
+
+      const startAt = new Date(parsed.timeRange.from);
+      const endAt = new Date(parsed.timeRange.to);
+
+      if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime()))
+        return yield* Effect.fail(
+          new ValidationError({
+            issues: validationIssues('Invalid datetime format'),
+          }),
+        );
+
+      if (startAt > endAt)
+        return yield* Effect.fail(
+          new ValidationError({
+            issues: validationIssues(
+              'Start time must be earlier than end time',
+            ),
+          }),
+        );
+
+      const result = yield* Effect.tryPromise({
+        try: () =>
+          TodoModel.updateOne(
+            { _id: id, ownerId: userId },
+            {
+              $set: {
+                title: parsed.title,
+                description: parsed.description,
+                startAt,
+                endAt,
+              },
+            },
+          ),
         catch: (cause) => new UpdateTodoError({ cause }),
       });
+
+      if (result.matchedCount === 0)
+        return yield* Effect.fail(new TodoNotFoundError({ id }));
     }),
 
-  deleteTodo: (id: string) =>
+  deleteTodo: (userId: string, id: string) =>
     Effect.gen(function* () {
-      return yield* Effect.tryPromise({
-        try: () => TodoModel.deleteOne({ _id: id }),
+      const result = yield* Effect.tryPromise({
+        try: () => TodoModel.deleteOne({ _id: id, ownerId: userId }),
         catch: () => new DeleteTodoError({ id }),
       });
+
+      if (result.deletedCount === 0)
+        return yield* Effect.fail(new TodoNotFoundError({ id }));
     }),
 };

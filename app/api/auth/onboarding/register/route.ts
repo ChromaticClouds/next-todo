@@ -1,4 +1,7 @@
-import { tokenCookieOptions } from '@/features/auth/lib/jwt';
+import {
+  accessTokenCookieOptions,
+  refreshTokenCookieOptions,
+} from '@/features/auth/lib/jwt';
 import { authService } from '@/features/auth/server/auth-service';
 import { runApiEffect } from '@/lib/effect';
 import { withMongo } from '@/lib/mongoose';
@@ -24,12 +27,14 @@ export const POST = async (request: NextRequest) => {
       onSuccess: ({ accessToken, refreshToken, user }) => {
         cookieStore.delete('onboarding_token');
 
-        cookieStore.set('refresh_token', refreshToken, tokenCookieOptions);
-
-        return ApiResponse.ok(
-          { accessToken, user },
-          'User account successfully created.',
+        cookieStore.set('access_token', accessToken, accessTokenCookieOptions);
+        cookieStore.set(
+          'refresh_token',
+          refreshToken,
+          refreshTokenCookieOptions,
         );
+
+        return ApiResponse.ok({ user }, 'User account successfully created.');
       },
       onError: {
         InvalidProfileFormError: (error) =>

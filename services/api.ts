@@ -10,5 +10,17 @@ export const api = ky.create({
         request.headers.set('Accept', 'application/json');
       },
     ],
+    afterResponse: [
+      async (request, _options, response) => {
+        if (
+          response.status === 401 &&
+          !request.url.includes('/api/auth/') &&
+          typeof window !== 'undefined' &&
+          window.location.pathname !== '/login'
+        ) {
+          window.location.assign('/login');
+        }
+      },
+    ],
   },
 });
