@@ -22,5 +22,5 @@ export const validateExistingUser = ({ user, account }: OAuthParams) =>
       if (existingUser)
         return `/api/auth/oauth/success/${existingUser._id.toString()}` as const;
     },
-    catch: () => new FindUserError(),
+    catch: () => new FindUserError({ message: 'Not found user' }),
   });
