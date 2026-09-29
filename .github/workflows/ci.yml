@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, typecheck, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.9.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+        env:
+          APP_BASE_URL: http://localhost:3000
+          NEXTAUTH_URL: http://localhost:3000
+          AUTH_SECRET: ci-auth-secret-ci-auth-secret-ci
+          AUTH_GOOGLE_ID: ci-google-client-id
+          AUTH_GOOGLE_SECRET: ci-google-client-secret
+          MONGO_URI: mongodb://127.0.0.1:27017/todo-ci
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+          REDIS_USER: ci
+          REDIS_PASS: ci
+          JWT_ACCESS_SECRET: ci-access-secret-ci-access-secret
+          JWT_REFRESH_SECRET: ci-refresh-secret-ci-refresh-secret
+          JWT_ACCESS_EXPIRE: 15m
+          JWT_REFRESH_EXPIRE: 14d
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-publishable-key
+          SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+          MAIL_PREFIX: ci
+          MAIL_USER: ci@example.com
+          MAIL_PASS: ci-mail-password
