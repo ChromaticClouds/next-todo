@@ -55,6 +55,10 @@ export class StoreRefreshTokenError extends Data.TaggedError(
   'StoreRefreshTokenError',
 )<{ message: string }> {}
 
+export class InvalidCredentialsError extends Data.TaggedError(
+  'InvalidCredentialsError',
+)<{ message: string }> {}
+
 export class SupabaseError extends Data.TaggedError('SupabaseError')<{
   message: string;
 }> {}

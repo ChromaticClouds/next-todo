@@ -15,6 +15,7 @@ export const useLoginForm = () => {
 
   return useAppForm({
     defaultValues,
+    validators: { onChange: loginSchema },
     onSubmit: async ({ value, formApi }) => {
       try {
         await authApi.postLoginForm(value);

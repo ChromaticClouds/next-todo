@@ -4,6 +4,7 @@ import { createToken, storeRefreshToken } from '@/features/auth/lib/jwt';
 import {
   CompleteOnboardingError,
   FindUserError,
+  InvalidCredentialsError,
   InvalidOtpError,
   MailSendError,
   NotFoundEmailError,
@@ -12,6 +13,7 @@ import {
   SaveUserError,
   UserAlreadyExistsError,
 } from '@/features/auth/server/auth-errors';
+import { loginSchema } from '@/features/auth/schemas/auth-schema';
 import { consumeOnboardingToken } from '@/features/auth/services/consume-onboarding-token';
 import { getOnboardingPayload } from '@/features/auth/services/get-onboarding-payload';
 import { saveUser } from '@/features/auth/services/save-user';
@@ -28,6 +30,8 @@ import { getSignedUrl } from '@/lib/supabase/supabase';
 import { randomInt, randomUUID } from 'crypto';
 import { Effect } from 'effect';
 import { Account, User } from 'next-auth';
+import { ValidationError } from '@/shared/errors/global-error';
+import { z } from 'zod';
 
 type OAuthParams = {
   user: User;
@@ -96,11 +100,7 @@ export const authService = {
 
       const { id: userId, email, name } = user;
 
-      const [accessToken, refreshToken, jti] = createToken({
-        userId,
-        email,
-        name,
-      });
+      const [accessToken, refreshToken, jti] = createToken({ userId });
 
       const image = yield* getSignedUrl(imagePath, 'avatars');
 
@@ -118,9 +118,68 @@ export const authService = {
       return { accessToken, refreshToken, user: userResponse };
     }),
 
+  login: (body: unknown) =>
+    Effect.gen(function* () {
+      const parsed = loginSchema.safeParse(body);
+
+      if (!parsed.success)
+        return yield* Effect.fail(
+          new ValidationError({ issues: z.flattenError(parsed.error) }),
+        );
+
+      const email = parsed.data.email.toLowerCase().trim();
+      const user = yield* Effect.tryPromise({
+        try: () => UserModel.findOne({ provider: 'local', email }),
+        catch: () => new FindUserError({ message: 'Failed to find user' }),
+      });
+
+      if (!user?.passwordHash)
+        return yield* Effect.fail(
+          new InvalidCredentialsError({
+            message: 'Invalid email or password',
+          }),
+        );
+
+      const passwordMatches = yield* Effect.tryPromise({
+        try: () => bcrypt.compare(parsed.data.password, user.passwordHash!),
+        catch: () =>
+          new InvalidCredentialsError({
+            message: 'Invalid email or password',
+          }),
+      });
+
+      if (!passwordMatches)
+        return yield* Effect.fail(
+          new InvalidCredentialsError({
+            message: 'Invalid email or password',
+          }),
+        );
+
+      const userId = user.id;
+      const [accessToken, refreshToken, jti] = createToken({ userId });
+
+      yield* storeRefreshToken({ userId, jti });
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          userId,
+          email: user.email,
+          name: user.name,
+          image: undefined,
+        },
+      } satisfies AuthResponse;
+    }),
+
   register: (body: unknown) =>
     Effect.gen(function* async() {
-      const { email, name, password } = yield* validateRegisterBody(body);
+      const {
+        email: rawEmail,
+        name,
+        password,
+      } = yield* validateRegisterBody(body);
+      const email = rawEmail.toLowerCase().trim();
 
       const token = randomUUID();
       const code = randomInt(0, 1000000).toString().padStart(6, '0');
@@ -211,7 +270,7 @@ export const authService = {
         );
       }
 
-      yield* Effect.tryPromise({
+      const user = yield* Effect.tryPromise({
         try: async () =>
           await new UserModel({ provider: 'local', email, ...parsed }).save(),
         catch: (err) => {
@@ -219,6 +278,11 @@ export const authService = {
           return new SaveUserError({ message: 'Save User Error' });
         },
       });
+
+      const userId = user.id;
+      const [accessToken, refreshToken, jti] = createToken({ userId });
+
+      yield* storeRefreshToken({ userId, jti });
 
       yield* Effect.tryPromise({
         try: async () =>
@@ -229,5 +293,16 @@ export const authService = {
         catch: () =>
           new OtpStoreError({ message: 'Failed to cleanup session' }),
       });
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          userId,
+          email: user.email,
+          name: user.name,
+          image: undefined,
+        },
+      } satisfies AuthResponse;
     }),
 };

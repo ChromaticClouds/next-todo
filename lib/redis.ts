@@ -6,4 +6,5 @@ export const redis = new Redis({
   port: Number(config.REDIS_PORT),
   username: config.REDIS_USER,
   password: config.REDIS_PASS,
+  lazyConnect: true,
 });

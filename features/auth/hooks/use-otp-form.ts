@@ -1,23 +1,31 @@
 import { useAppForm } from '@/components/form';
 import { authApi } from '@/features/auth/services/http';
-import { api } from '@/services/api';
 import { HTTPError } from 'ky';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 const defaultValues = {
   otp: '',
 };
 
-export const useOtpForm = () =>
-  useAppForm({
+export const useOtpForm = () => {
+  const router = useRouter();
+
+  return useAppForm({
     defaultValues,
-    onSubmit: async ({ value, formApi }) => {
+    onSubmit: async ({ value }) => {
       try {
         await authApi.postOtp(value);
-        console.log('validation success')
+        router.replace('/');
       } catch (err) {
         if (err instanceof HTTPError) {
-          console.log(await err.response.json());
+          const response = await err.response.json<{ message?: string }>();
+          toast.error(response.message ?? 'Verification failed');
+          return;
         }
+
+        toast.error('Internal server error');
       }
     },
   });
+};

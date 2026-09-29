@@ -1,5 +1,6 @@
 import { FindUserError } from '@/features/auth/server/auth-errors';
 import { UserModel } from '@/features/user/server/user-model';
+import { storeOAuthHandoff } from '@/features/auth/services/oauth-handoff';
 import { Effect } from 'effect';
 import { Account, User } from 'next-auth';
 
@@ -19,8 +20,13 @@ export const validateExistingUser = ({ user, account }: OAuthParams) =>
         providerAccountId: account?.providerAccountId,
       }).lean();
 
-      if (existingUser)
-        return `/api/auth/oauth/success/${existingUser._id.toString()}` as const;
+      if (existingUser) {
+        const handoffToken = await storeOAuthHandoff(
+          existingUser._id.toString(),
+        );
+
+        return `/api/auth/oauth/success/${handoffToken}` as const;
+      }
     },
     catch: () => new FindUserError({ message: 'Not found user' }),
   });

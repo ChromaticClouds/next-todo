@@ -9,7 +9,8 @@ const cookieOptions = {
   httpOnly: true,
   secure: config.NODE_ENV === 'production',
   sameSite: 'lax',
-  maxAge: config.MAIL_EXPIRE * 1000,
+  path: '/',
+  maxAge: config.MAIL_EXPIRE,
 } as const;
 
 export const POST = async (request: NextRequest) => {
@@ -25,10 +26,8 @@ export const POST = async (request: NextRequest) => {
     onError: {
       ValidationError: ({ issues }) =>
         ApiResponse.badRequest('Invalid input values', issues),
-      OtpStoreError: (error) => 
-        ApiResponse.internalServerError(error.message),
-      MailSendError: (error) => 
-        ApiResponse.internalServerError(error.message),
+      OtpStoreError: (error) => ApiResponse.internalServerError(error.message),
+      MailSendError: (error) => ApiResponse.internalServerError(error.message),
     },
   });
 };
