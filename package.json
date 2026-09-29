@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "migrate:todo-owner": "node --env-file=.env.local scripts/assign-orphaned-todos.mjs"
   },
   "dependencies": {

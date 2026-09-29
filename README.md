@@ -1,5 +1,7 @@
 # Next Todo
 
+[![CI](https://github.com/ChromaticClouds/next-todo/actions/workflows/ci.yml/badge.svg)](https://github.com/ChromaticClouds/next-todo/actions/workflows/ci.yml)
+
 Next.js App Router 기반의 개인 Todo 관리 애플리케이션입니다. 이메일/OTP와 Google OAuth 인증을 지원하며, OAuth 신규 사용자는 Redis 기반 온보딩 세션을 거쳐 프로필을 완성한 뒤 계정이 생성됩니다. 인증된 사용자는 본인이 소유한 Todo만 조회·생성·수정·삭제할 수 있습니다.
 
 ## 주요 기능
@@ -170,8 +172,20 @@ pnpm dev
 
 ```bash
 pnpm lint
+pnpm typecheck
 pnpm build
 ```
+
+## CI
+
+GitHub Actions는 pull request와 `main` 브랜치 push마다 다음 검사를 자동 실행합니다.
+
+1. `pnpm install --frozen-lockfile`
+2. ESLint
+3. TypeScript typecheck
+4. Next.js production build
+
+동일 브랜치에 새 커밋이 push되면 이전 실행은 취소되고 최신 커밋을 검사합니다. CI 빌드는 외부 MongoDB나 Redis에 접속하지 않으며, 컴파일에 필요한 비밀이 아닌 placeholder 환경 변수만 사용합니다.
 
 ## 기존 Todo 소유자 마이그레이션
 
