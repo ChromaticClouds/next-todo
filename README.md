@@ -103,7 +103,7 @@ scripts/                데이터 마이그레이션 스크립트
 
 ### 요구 사항
 
-- Node.js 20 이상
+- Node.js 24 이상
 - pnpm
 - MongoDB
 - Redis
